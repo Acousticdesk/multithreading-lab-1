@@ -19,6 +19,8 @@ bool finished = false;
 
 mutex m;
 
+typedef vector<string> Edges;
+
 class Vertex {
     string value;
     vector<string> edges;
@@ -305,7 +307,17 @@ void log() {
     Graph state = sm.getState();
     
     for (int i = 0; i < state.getVertecies().size(); i++) {
-        cout << state.getVertex(i).getValue() << endl;
+        Vertex v = state.getVertex(i);
+        Edges e = v.getEdges();
+        
+        cout << v.getValue() << endl;
+        cout << "------------------------------" << endl;
+        
+        for (int j = 0; j < e.size(); j++) {
+            cout << e.at(j) << ", ";
+        }
+        
+        cout << endl;
     }
 
 //    for(auto const& key: state.getVertecies()) {
