@@ -66,87 +66,59 @@ public:
         
         return -1;
     }
-//    void addEdge(int currentX, int nextX)
-//    {
-//        m.lock();
-//        // there is no such x yet
-//        if (!this->state.count(currentX))
-//        {
-//            vector<int> v;
-//            this->state[currentX] = v;
-//        }
-//
-//        if (!count(this->state[currentX].begin(), this->state[currentX].end(), nextX))
-//        {
-//            this->state[currentX].push_back(nextX);
-//        }
-//        m.unlock();
-//    }
-//
-//    map<int, vector<int>> getState() {
-//        return this->state;
-//    }
 };
 
-//void thread1() {
-//    g.addEdge(x, 0);
-//    x=0; y=0; z=0;
-//
-//    while (n < MAX_ITERATIONS) {
-//        g.addEdge(x, 1);
-//        x=1;
-//        g.addEdge(x, 2);
-//        x=2;
-//        g.addEdge(x, z);
-//        x=z;
-//        n++;
-//    }
-//
-//    finished = true;
-//}
-//
-//void thread2() {
-//    g.addEdge(x, 1);
-//    x=1; y=1; z=1;
-//
-//    while (n < MAX_ITERATIONS) {
-//        y=x;
-//        y=3;
-//        z=1;
-//        n++;
-//    }
-//
-//    finished = true;
-//}
-//
-//void thread3() {
-//    g.addEdge(x, 2);
-//    x=2; y=2; z=2;
-//    while (n < MAX_ITERATIONS) {
-//        z=2;
-//        z=y;
-//        g.addEdge(x, 0);
-//        x=1;
-//        n++;
-//    }
-//
-//    finished = true;
-//}
-//
-//void thread4() {
-//    x=0; y=1; z=2;
-//
-//    while (n < MAX_ITERATIONS) {
-//        y=3;
-//        y=5;
-//        g.addEdge(x, 7);
-//        x=7;
-//        n++;
-//    }
-//
-//    finished = true;
-//}
-//
+void thread1() {
+    x=0; y=0; z=0;
+
+    while (n < MAX_ITERATIONS) {
+        x=1;
+        x=2;
+        x=z;
+        n++;
+    }
+
+    finished = true;
+}
+
+void thread2() {
+    x=1; y=1; z=1;
+
+    while (n < MAX_ITERATIONS) {
+        y=x;
+        y=3;
+        z=1;
+        n++;
+    }
+
+    finished = true;
+}
+
+void thread3() {
+    x=2; y=2; z=2;
+    while (n < MAX_ITERATIONS) {
+        z=2;
+        z=y;
+        x=1;
+        n++;
+    }
+
+    finished = true;
+}
+
+void thread4() {
+    x=0; y=1; z=2;
+
+    while (n < MAX_ITERATIONS) {
+        y=3;
+        y=5;
+        x=7;
+        n++;
+    }
+
+    finished = true;
+}
+
 //void log() {
 //    while (!finished) {
 //        this_thread::sleep_for(chrono::milliseconds(1000));
@@ -166,28 +138,26 @@ public:
 
 
 int main() {
-//    thread t_thread1(thread1);
-//    thread t_thread2(thread2);
-//    thread t_thread3(thread3);
-//    thread t_thread4(thread4);
+    thread t_thread1(thread1);
+    thread t_thread2(thread2);
+    thread t_thread3(thread3);
+    thread t_thread4(thread4);
 //    thread logThread(log);
-//
-//    t_thread1.detach();
-//    t_thread2.detach();
-//    t_thread3.detach();
-//    t_thread4.detach();
+
+    t_thread1.detach();
+    t_thread2.detach();
+    t_thread3.detach();
+    t_thread4.detach();
 //    logThread.detach();
     
-//    while (true) {}
-    
-    Graph g;
-
-    Vertex v = g.addVertex("1");
-
-    vector<string> edges{"1"};
-    v.setEdges(edges);
-
-    cout << g.findVertex("2") << endl;
+//    Graph g;
+//
+//    Vertex v = g.addVertex("1");
+//
+//    vector<string> edges{"1"};
+//    v.setEdges(edges);
+//
+//    cout << g.findVertex("2") << endl;
         
-    return 0;
+    cin.get();
 }
