@@ -31,7 +31,8 @@ public:
     }
     
     vector<string> getEdges() {
-        return this->edges;
+        Edges& edgs = this->edges;
+        return edgs;
     }
     
     void setEdges(vector<string> aEdges) {
@@ -51,19 +52,19 @@ public:
         
         return -1;
     }
+    void setValue(string v) {
+        this->value = v;
+    }
 };
 
-// State Machine as a Graph representation
 class Graph {
     vector<Vertex> vertecies;
 
 public:
-    Vertex addVertex(string value) {
+    void addVertex(string value) {
         Vertex v(value);
         
-        vertecies.push_back(v);
-        
-        return v;
+        this->vertecies.push_back(v);
     }
     int findVertex(string value) {
         auto isSubjectVertex = [=](Vertex v){ return v.getValue() == value; };
@@ -76,10 +77,7 @@ public:
         
         return -1;
     }
-    Vertex getVertex (int i) {
-        return this->vertecies.at(i);
-    }
-    vector<Vertex> getVertecies() {
+    vector<Vertex>& getVertecies() {
         return this->vertecies;
     }
 };
@@ -101,7 +99,8 @@ public:
         int foundAtIndex = this->state.findVertex(x);
         if (foundAtIndex != -1) {
             // state found
-            Vertex v = this->state.getVertex(foundAtIndex);
+            vector<Vertex>& vtcs = this->state.getVertecies();
+            Vertex& v = vtcs.at(foundAtIndex);
             if (v.findEdge(transition) == -1) {
                 vector<string> transitionEdge{ transition };
                 v.setEdges(transitionEdge);
@@ -110,7 +109,7 @@ public:
         m.unlock();
     }
     
-    Graph getState() {
+    Graph& getState() {
         return this->state;
     }
 };
@@ -302,30 +301,19 @@ void log() {
         this_thread::sleep_for(chrono::milliseconds(1000));
     }
 
-//    this_thread::sleep_for(chrono::milliseconds(1000));
-
-    Graph state = sm.getState();
+    Graph& state = sm.getState();
     
-    for (int i = 0; i < state.getVertecies().size(); i++) {
-        Vertex v = state.getVertex(i);
-        Edges e = v.getEdges();
-        
+    for (Vertex& v : state.getVertecies()) {
+        cout << "Vertex: " << endl;
         cout << v.getValue() << endl;
-        cout << "------------------------------" << endl;
         
-        for (int j = 0; j < e.size(); j++) {
-            cout << e.at(j) << ", ";
+        cout << "Edges: " << endl;
+        for (string e : v.getEdges()) {
+            cout << e << endl;
         }
         
-        cout << endl;
+        cout << "----------------" << endl;
     }
-
-//    for(auto const& key: state.getVertecies()) {
-//        cout << key.first << ": " << endl;
-//        for (int i = 0; i < state[key.first].size(); i++) {
-//            cout << state[key.first][i] << endl;
-//        }
-//    }
 }
 
 
