@@ -13,7 +13,7 @@ int z;
 
 int n = 0;
 
-int MAX_ITERATIONS = 1000000;
+int MAX_ITERATIONS = 100;
 
 bool finished = false;
 
@@ -77,6 +77,9 @@ public:
     Vertex getVertex (int i) {
         return this->vertecies.at(i);
     }
+    vector<Vertex> getVertecies() {
+        return this->vertecies;
+    }
 };
 
 class StateMachine {
@@ -103,6 +106,10 @@ public:
             }
         }
         m.unlock();
+    }
+    
+    Graph getState() {
+        return this->state;
     }
 };
 
@@ -288,22 +295,26 @@ void thread4() {
     finished = true;
 }
 
-//void log() {
-//    while (!finished) {
-//        this_thread::sleep_for(chrono::milliseconds(1000));
-//    }
-//
+void log() {
+    while (!finished) {
+        this_thread::sleep_for(chrono::milliseconds(1000));
+    }
+
 //    this_thread::sleep_for(chrono::milliseconds(1000));
-//
-//    map<int, vector<int>> state = g.getState();
-//
-//    for(auto const& key: state) {
+
+    Graph state = sm.getState();
+    
+    for (int i = 0; i < state.getVertecies().size(); i++) {
+        cout << state.getVertex(i).getValue() << endl;
+    }
+
+//    for(auto const& key: state.getVertecies()) {
 //        cout << key.first << ": " << endl;
 //        for (int i = 0; i < state[key.first].size(); i++) {
 //            cout << state[key.first][i] << endl;
 //        }
 //    }
-//}
+}
 
 
 int main() {
@@ -311,13 +322,13 @@ int main() {
     thread t_thread2(thread2);
     thread t_thread3(thread3);
     thread t_thread4(thread4);
-//    thread logThread(log);
+    thread logThread(log);
 
     t_thread1.detach();
     t_thread2.detach();
     t_thread3.detach();
     t_thread4.detach();
-//    logThread.detach();
+    logThread.detach();
         
     cin.get();
 }
