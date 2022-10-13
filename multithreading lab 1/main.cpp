@@ -66,9 +66,31 @@ public:
     string toString() {
         return to_string(this->mX) + "|" + to_string(this->mY) + "|" + to_string(this->mZ) + "|" + to_string(this->mP1) + "|" + to_string(this->mP2) + "|" + to_string(this->mP3) + "|" + to_string(this->mP4);
     }
+    
+    int getX() {
+        return this->mX;
+    }
+    
+    void clearStatesWhereXDidNotChange() {
+        for (int i = 0; i < this->mState.size(); i ++) {
+            if (i == 0) {
+                continue;
+            }
+            
+            int xCurrent = this->mState.at(i).getX();
+            int xPrevious = this->mState.at(i - 1).getX();
+            
+            if (xCurrent == xPrevious) {
+                this->mState.erase(this->mState.begin() + i);
+                // because we removed an element at i and shifted all the further elements positions
+                // meaning that the next item is i -= 1
+                i-=1;
+            }
+        }
+    }
 };
 
-// Privisioning the statem machine with the inital state
+// Privisioning the state machine with the inital state
 StateMachine sm(0, 0, 0, 0, 0, 0, 0);
 
 void thread1() {
@@ -205,6 +227,7 @@ void log() {
     }
     
     vector<StateMachine> &s = sm.getState();
+    sm.clearStatesWhereXDidNotChange();
     
     cout << "All the captured states:" << endl;
     for (StateMachine smn : s) {
