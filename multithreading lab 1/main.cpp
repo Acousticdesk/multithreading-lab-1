@@ -7,154 +7,96 @@
 
 using namespace std;
 
+// the current states of the variables
 int x;
 int y;
 int z;
 
+// Ids of the currently processed operation
+int p1;
+int p2;
+int p3;
+int p4;
+
+// total number of operations taken (is being used to track how many more operations we need to take before exiting)
 int n = 0;
 
-int MAX_ITERATIONS = 100;
+const int MAX_ITERATIONS = 10;
 
+// whether or not we stopped processing the threads
 bool finished = false;
 
 mutex m;
 
-typedef vector<string> Edges;
-
-class Vertex {
-    string value;
-    vector<string> edges;
-    
-public:
-    Vertex(string aValue) {
-        value = aValue;
-    }
-    
-    vector<string> getEdges() {
-        Edges& edgs = this->edges;
-        return edgs;
-    }
-    
-    void setEdges(vector<string> aEdges) {
-        for (string edge: aEdges) {
-            this->edges.push_back(edge);
-        }
-    }
-    string getValue() {
-        return this->value;
-    }
-    int findEdge(string aEdge) {
-        auto it = find_if(this->edges.begin(), this->edges.end(), [=](string edge){ return edge == aEdge; });
-        
-        if (it != this->edges.end()) {
-            return distance(this->edges.begin(), it);
-        }
-        
-        return -1;
-    }
-    void setValue(string v) {
-        this->value = v;
-    }
-};
-
-class Graph {
-    vector<Vertex> vertecies;
-
-public:
-    void addVertex(string value) {
-        Vertex v(value);
-        
-        this->vertecies.push_back(v);
-    }
-    int findVertex(string value) {
-        auto isSubjectVertex = [=](Vertex v){ return v.getValue() == value; };
-        auto it = find_if(this->vertecies.begin(), this->vertecies.end(), isSubjectVertex);
-        
-        if (it != this->vertecies.end()) {
-            // element found
-            return distance(this->vertecies.begin(), it);
-        }
-        
-        return -1;
-    }
-    vector<Vertex>& getVertecies() {
-        return this->vertecies;
-    }
-};
-
 class StateMachine {
-    Graph state;
+    vector<StateMachine> mState;
+    
+    int mX;
+    int mY;
+    int mZ;
+    
+    int mP1;
+    int mP2;
+    int mP3;
+    int mP4;
     
 public:
-    void addState(string x) {
+    StateMachine(int aX, int aY, int aZ, int aP1, int aP2, int aP3, int aP4) {
+        this->mX = aX;
+        this->mY = aY;
+        this->mZ = aZ;
+        
+        this->mP1 = aP1;
+        this->mP2 = aP2;
+        this->mP3 = aP3;
+        this->mP4 = aP4;
+    }
+    
+    void makeNextState(int aX, int aY, int aZ, int aP1, int aP2, int aP3, int aP4) {
         m.lock();
-        if (this->state.findVertex(x) == -1) {
-            this->state.addVertex(x);
-        }
+        StateMachine s(aX, aY, aZ, aP1, aP2, aP3, aP4);
+        this->mState.push_back(s);
         m.unlock();
     }
     
-    void addTransition(string x, string transition) {
-        m.lock();
-        int foundAtIndex = this->state.findVertex(x);
-        if (foundAtIndex != -1) {
-            // state found
-            vector<Vertex>& vtcs = this->state.getVertecies();
-            Vertex& v = vtcs.at(foundAtIndex);
-            if (v.findEdge(transition) == -1) {
-                vector<string> transitionEdge{ transition };
-                v.setEdges(transitionEdge);
-            }
-        }
-        m.unlock();
+    vector<StateMachine> &getState() {
+        return this->mState;
     }
     
-    Graph& getState() {
-        return this->state;
+    string toString() {
+        return to_string(this->mX) + "|" + to_string(this->mY) + "|" + to_string(this->mZ) + "|" + to_string(this->mP1) + "|" + to_string(this->mP2) + "|" + to_string(this->mP3) + "|" + to_string(this->mP4);
     }
 };
 
-StateMachine sm;
+// Privisioning the statem machine with the inital state
+StateMachine sm(0, 0, 0, 0, 0, 0, 0);
 
 void thread1() {
-    string x1 = to_string(x);
-    sm.addState(x1);
-    
     x=0;
-    
-    sm.addTransition(x1, to_string(x));
-    string x2 = to_string(x);
-    sm.addState(x2);
+    p1 = 11;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
     y=0;
-    
-    sm.addTransition(x2, to_string(x));
-    string x3 = to_string(x);
-    sm.addState(x3);
+    p1 = 12;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
     z=0;
+    p1 = 13;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
-    sm.addTransition(x3, to_string(x));
-
     while (n < MAX_ITERATIONS) {
-        string x4 = to_string(x);
-        sm.addState(x4);
-        
         x=1;
-        
-        sm.addTransition(x4, to_string(x));
-        string x5 = to_string(x);
-        sm.addState(x5);
+        p1 = 14;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
         x=2;
-        
-        sm.addTransition(x5, to_string(x));
-        string x6 = to_string(x);
-        sm.addState(x6);
+        p1 = 15;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
         x=z;
+        p1 = 16;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
-        sm.addTransition(x6, to_string(x));
         n++;
     }
 
@@ -162,44 +104,31 @@ void thread1() {
 }
 
 void thread2() {
-    string x1 = to_string(x);
-    sm.addState(x1);
-    
     x=1;
-    
-    sm.addTransition(x1, to_string(x));
-    string x2 = to_string(x);
-    sm.addState(x2);
+    p2 = 21;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
     y=1;
-    
-    sm.addTransition(x2, to_string(x));
-    string x3 = to_string(x);
-    sm.addState(x3);
+    p2 = 22;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
     z=1;
+    p2 = 23;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
-    sm.addTransition(x3, to_string(x));
-
     while (n < MAX_ITERATIONS) {
-        string x4 = to_string(x);
-        sm.addState(x4);
-        
         y=x;
-        
-        sm.addTransition(x4, to_string(x));
-        string x5 = to_string(x);
-        sm.addState(x5);
+        p2 = 24;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
         y=3;
-        
-        sm.addTransition(x5, to_string(x));
-        string x6 = to_string(x);
-        sm.addState(x6);
+        p2 = 25;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
         z=1;
+        p3 = 26;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
-        sm.addTransition(x6, to_string(x));
         n++;
     }
 
@@ -207,44 +136,31 @@ void thread2() {
 }
 
 void thread3() {
-    string x1 = to_string(x);
-    sm.addState(x1);
-    
     x=2;
-    
-    sm.addTransition(x1, to_string(x));
-    string x2 = to_string(x);
-    sm.addState(x2);
+    p3 = 31;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
     y=2;
-    
-    sm.addTransition(x2, to_string(x));
-    string x3 = to_string(x);
-    sm.addState(x3);
+    p3 = 32;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
     z=2;
-    
-    sm.addTransition(x3, to_string(x));
+    p3 = 33;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
 
     while (n < MAX_ITERATIONS) {
-        string x4 = to_string(x);
-        sm.addState(x4);
-        
         z=2;
-        
-        sm.addTransition(x4, to_string(x));
-        string x5 = to_string(x);
-        sm.addState(x5);
+        p3 = 34;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
         z=y;
-        
-        sm.addTransition(x5, to_string(x));
-        string x6 = to_string(x);
-        sm.addState(x6);
+        p3 = 35;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
         x=1;
+        p3 = 36;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
-        sm.addTransition(x6, to_string(x));
         n++;
     }
 
@@ -252,44 +168,31 @@ void thread3() {
 }
 
 void thread4() {
-    string x1 = to_string(x);
-    sm.addState(x1);
-    
     x=0;
-    
-    sm.addTransition(x1, to_string(x));
-    string x2 = to_string(x);
-    sm.addState(x2);
+    p4 = 41;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
     y=1;
-    
-    sm.addTransition(x2, to_string(x));
-    string x3 = to_string(x);
-    sm.addState(x3);
+    p4 = 42;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
     z=2;
+    p4 = 43;
+    sm.makeNextState(x, y, z, p1, p2, p3, p4);
     
-    sm.addTransition(x3, to_string(x));
-
     while (n < MAX_ITERATIONS) {
-        string x4 = to_string(x);
-        sm.addState(x4);
-        
         y=3;
-        
-        sm.addTransition(x4, to_string(x));
-        string x5 = to_string(x);
-        sm.addState(x5);
+        p4 = 44;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
         y=5;
-        
-        sm.addTransition(x5, to_string(x));
-        string x6 = to_string(x);
-        sm.addState(x6);
+        p4 = 45;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
         x=7;
+        p4 = 46;
+        sm.makeNextState(x, y, z, p1, p2, p3, p4);
         
-        sm.addTransition(x6, to_string(x));
         n++;
     }
 
@@ -300,19 +203,12 @@ void log() {
     while (!finished) {
         this_thread::sleep_for(chrono::milliseconds(1000));
     }
-
-    Graph& state = sm.getState();
     
-    for (Vertex& v : state.getVertecies()) {
-        cout << "Vertex: " << endl;
-        cout << v.getValue() << endl;
-        
-        cout << "Edges: " << endl;
-        for (string e : v.getEdges()) {
-            cout << e << endl;
-        }
-        
-        cout << "----------------" << endl;
+    vector<StateMachine> &s = sm.getState();
+    
+    cout << "All the captured states:" << endl;
+    for (StateMachine smn : s) {
+        cout << smn.toString() << endl;
     }
 }
 
@@ -329,6 +225,6 @@ int main() {
     t_thread3.detach();
     t_thread4.detach();
     logThread.detach();
-        
+
     cin.get();
 }
