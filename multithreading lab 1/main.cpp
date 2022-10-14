@@ -76,6 +76,10 @@ public:
         return to_string(this->mX) + "|" + to_string(this->mY) + "|" + to_string(this->mZ) + "|" + to_string(this->mP1) + "|" + to_string(this->mP2) + "|" + to_string(this->mP3) + "|" + to_string(this->mP4);
     }
     
+    string toXYZString() {
+        return to_string(this->mX) + "|" + to_string(this->mY) + "|" + to_string(this->mZ);
+    }
+    
     int getX() {
         return this->mX;
     }
@@ -110,6 +114,8 @@ public:
 //        return *this->mNextState;
 //    }
 };
+
+map<string, vector<StateMachine>> stateTransitions;
 
 // Privisioning the state machine with the inital state
 StateMachine sm(0, 0, 0, 0, 0, 0, 0, "");
@@ -242,18 +248,96 @@ void thread4() {
     finished = true;
 }
 
-void log() {
+void finalize() {
     while (!finished) {
         this_thread::sleep_for(chrono::milliseconds(1000));
     }
     
+    // create state transition map
     vector<StateMachine> &s = sm.getState();
     sm.clearStatesWhereXDidNotChange();
     
-    cout << "All the captured states:" << endl;
-    for (StateMachine smn : s) {
-        cout << smn.toString() << endl;
+//    for (int i = 0; i < s.size(); i++) {
+//        if (i == 0) {
+//            continue;
+//        }
+//
+//        string stateKey = s.at(i).toXYZString();
+//
+//        // not found
+//        if (stateTransitions.find(stateKey) == stateTransitions.end()) {
+//            vector<StateMachine> sv;
+//            stateTransitions[stateKey] = sv;
+//        }
+//
+//        stateTransitions[stateKey].push_back(s.at(i - 1));
+//    }
+    
+    for (int i = 0; i < s.size(); i++) {
+        // we are not interested in the last item
+        if (i == s.size() - 1) {
+            continue;
+        }
+
+        string stateKey = s.at(i).toXYZString();
+        
+        // not found
+        if (stateTransitions.find(stateKey) == stateTransitions.end()) {
+            vector<StateMachine> sv;
+            stateTransitions[stateKey] = sv;
+        }
+        
+        stateTransitions[stateKey].push_back(s.at(i + 1));
     }
+    
+    for (auto it = stateTransitions.begin(); it != stateTransitions.end(); it++) {
+        cout << "The state key: " << it->first << endl;
+        for (StateMachine smn : it->second) {
+            cout << "Transitioned to: " << smn.toString() << endl;
+        }
+    }
+    
+    cout << endl;
+    cout << endl;
+    
+    string regEx = "^";
+    
+    // create a regular expression
+    for (StateMachine smn : s) {
+        regEx += to_string(smn.getX());
+        
+        // all the possible next states
+        if (stateTransitions.find(smn.toXYZString()) != stateTransitions.end()) {
+            // found next states
+            
+            regEx += "(";
+            
+            for (int i = 0; i < stateTransitions[smn.toXYZString()].size(); i++) {
+                regEx += to_string(stateTransitions[smn.toXYZString()].at(i).getX());
+                if (i != stateTransitions[smn.toXYZString()].size() - 1) {
+                    regEx += "|";
+                }
+            }
+            
+            regEx += ")";
+        }
+    }
+    
+    regEx += "$";
+    
+    cout << "The regex: " << regEx << endl;
+    
+//    for (auto it = stateTransitions.begin(); it != stateTransitions.end(); it++) {
+//        cout << "The state key: " << it->first << endl;
+//        for (StateMachine smn : it->second) {
+//            cout << "Transitioned from: " << smn.toString() << endl;
+//        }
+//    }
+    
+//    cout << "All the captured states:" << endl;
+//    for (StateMachine smn : s) {
+//        cout << smn.toString() << endl;
+//    }
     
 //    for (StateMachine smn : s) {
 //        cout << "-----------------------" << endl;
@@ -277,13 +361,13 @@ int main() {
     thread t_thread2(thread2);
     thread t_thread3(thread3);
     thread t_thread4(thread4);
-    thread logThread(log);
+    thread finalizeThread(finalize);
 
     t_thread1.detach();
     t_thread2.detach();
     t_thread3.detach();
     t_thread4.detach();
-    logThread.detach();
+    finalizeThread.detach();
 
     cin.get();
 }
