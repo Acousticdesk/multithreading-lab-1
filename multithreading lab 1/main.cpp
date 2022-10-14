@@ -21,7 +21,7 @@ int p4;
 // total number of operations taken (is being used to track how many more operations we need to take before exiting)
 int n = 0;
 
-const int MAX_ITERATIONS = 10;
+const int MAX_ITERATIONS = 1000;
 
 // whether or not we stopped processing the threads
 bool finished = false;
@@ -41,10 +41,7 @@ class StateMachine {
     int mP4;
     
     string mInitiator;
-    
-//    StateMachine *mPrevState;
-//    StateMachine *mNextState;
-    
+        
 public:
     StateMachine(int aX, int aY, int aZ, int aP1, int aP2, int aP3, int aP4, string aInitiator) {
         this->mX = aX;
@@ -62,8 +59,6 @@ public:
     void makeNextState(int aX, int aY, int aZ, int aP1, int aP2, int aP3, int aP4, string aInitiator) {
         m.lock();
         StateMachine s(aX, aY, aZ, aP1, aP2, aP3, aP4, aInitiator);
-        // s.setPrevState(*this);
-        // this->mNextState = &s;
         this->mState.push_back(s);
         m.unlock();
     }
@@ -101,18 +96,6 @@ public:
             }
         }
     }
-//
-//    void setPrevState(StateMachine &s) {
-//        this->mPrevState = &s;
-//    }
-//
-//    StateMachine getPreviousState() {
-//        return *this->mPrevState;
-//    }
-//
-//    StateMachine getNextState() {
-//        return *this->mNextState;
-//    }
 };
 
 map<string, vector<StateMachine>> stateTransitions;
@@ -257,22 +240,6 @@ void finalize() {
     vector<StateMachine> &s = sm.getState();
     sm.clearStatesWhereXDidNotChange();
     
-//    for (int i = 0; i < s.size(); i++) {
-//        if (i == 0) {
-//            continue;
-//        }
-//
-//        string stateKey = s.at(i).toXYZString();
-//
-//        // not found
-//        if (stateTransitions.find(stateKey) == stateTransitions.end()) {
-//            vector<StateMachine> sv;
-//            stateTransitions[stateKey] = sv;
-//        }
-//
-//        stateTransitions[stateKey].push_back(s.at(i - 1));
-//    }
-    
     for (int i = 0; i < s.size(); i++) {
         // we are not interested in the last item
         if (i == s.size() - 1) {
@@ -280,30 +247,34 @@ void finalize() {
         }
 
         string stateKey = s.at(i).toXYZString();
-        
+
         // not found
         if (stateTransitions.find(stateKey) == stateTransitions.end()) {
             vector<StateMachine> sv;
             stateTransitions[stateKey] = sv;
         }
-        
+
         stateTransitions[stateKey].push_back(s.at(i + 1));
     }
     
-    for (auto it = stateTransitions.begin(); it != stateTransitions.end(); it++) {
-        cout << "The state key: " << it->first << endl;
-        for (StateMachine smn : it->second) {
-            cout << "Transitioned to: " << smn.toString() << endl;
-        }
-    }
-    
-    cout << endl;
-    cout << endl;
+    // Log all the state transitions in a text format
+//    for (auto it = stateTransitions.begin(); it != stateTransitions.end(); it++) {
+//        cout << "The state key: " << it->first << endl;
+//        for (StateMachine smn : it->second) {
+//            cout << "Transitioned to: " << smn.toString() << endl;
+//        }
+//    }
+//
+//    cout << endl;
+//    cout << endl;
     
     string regEx = "^";
     
     // create a regular expression
-    for (StateMachine smn : s) {
+    for (int j = 0; j < s.size(); j++) {
+        StateMachine smn = s.at(j);
+        
+        regEx += "(";
         regEx += to_string(smn.getX());
         
         // all the possible next states
@@ -321,38 +292,19 @@ void finalize() {
             
             regEx += ")";
         }
+        
+        regEx += ")";
+        
+        if (j != s.size() - 1) {
+            regEx += "|";
+        }
     }
     
     regEx += "$";
     
+    // write the result into the console
+    
     cout << "The regex: " << regEx << endl;
-    
-//    for (auto it = stateTransitions.begin(); it != stateTransitions.end(); it++) {
-//        cout << "The state key: " << it->first << endl;
-//        for (StateMachine smn : it->second) {
-//            cout << "Transitioned from: " << smn.toString() << endl;
-//        }
-//    }
-    
-//    cout << "All the captured states:" << endl;
-//    for (StateMachine smn : s) {
-//        cout << smn.toString() << endl;
-//    }
-    
-//    for (StateMachine smn : s) {
-//        cout << "-----------------------" << endl;
-//
-//        cout << "The captured state: ";
-//        cout << smn.toString() << endl;
-//
-//        cout << "The previous state: ";
-//        cout << smn.getPreviousState().toString() << endl;
-//
-////        cout << "The next state: ";
-////        cout << smn.getNextState().toString() << endl;
-//
-//        cout << "----------------------" << endl;
-//    }
 }
 
 
