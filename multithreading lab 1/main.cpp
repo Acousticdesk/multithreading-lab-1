@@ -71,10 +71,6 @@ public:
         return to_string(this->mX) + "|" + to_string(this->mY) + "|" + to_string(this->mZ) + "|" + to_string(this->mP1) + "|" + to_string(this->mP2) + "|" + to_string(this->mP3) + "|" + to_string(this->mP4);
     }
     
-    string toXYZString() {
-        return to_string(this->mX) + "|" + to_string(this->mY) + "|" + to_string(this->mZ);
-    }
-    
     int getX() {
         return this->mX;
     }
@@ -101,6 +97,7 @@ public:
 map<string, StateMachine> allStatesLookup;
 map<string, vector<StateMachine>> stateTransitions;
 map<string, vector<StateMachine>> stateTransitionsNoDuplicates;
+//map<int, bool> singularStatesAdded;
 
 // Privisioning the state machine with the inital state
 StateMachine sm(0, 0, 0, 0, 0, 0, 0, "");
@@ -238,7 +235,8 @@ void finalize() {
         this_thread::sleep_for(chrono::milliseconds(1000));
     }
     
-    // create state transition map
+    // create state transition map (keep track of all the next states for a specific X)
+    // [{}, {}, ..., {}] => { [operation_id]: [{}, {}] }
     vector<StateMachine> &s = sm.getState();
     sm.clearStatesWhereXDidNotChange();
     
@@ -265,38 +263,64 @@ void finalize() {
     }
     
     // create states lookup (we will need it to properly remove the regex groups duplicates)
+    // also clear repetitive operations as we don't need repetitions
     for (int i = 0; i < s.size(); i++) {
-        allStatesLookup.insert(make_pair(s[i].toString(), s[i]));
+        if (allStatesLookup.find(s[i].toString()) != allStatesLookup.end()) {
+            // item already exists
+            s.erase(s.begin() + i);
+            // because we removed an element at i and shifted all the further elements positions
+            // meaning that the next item is i -= 1
+            i-=1;
+            continue;
+        }
+        allStatesLookup.insert(pair(s[i].toString(), s[i]));
     }
     
     // remove all the regex group duplicates
     for (auto it = stateTransitions.begin(); it != stateTransitions.end(); it++)
     {
         string currentStateKey = it->first;
-        int currentStateX = 1;
+        auto itAllStates = allStatesLookup.find(currentStateKey);
+        int currentStateX = -1;
         
-        // find the elements that transition to the exact same values
-        // 1. if there are no elements with the same X than it is impossible that they transition to the same values
-        if (find_if(s.begin(), s.end(), [&](StateMachine smn) { return smn.getX() == currentStateX; }) == s.end())
-        {
-            stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
+        if (itAllStates != allStatesLookup.end()) {
+            currentStateX = itAllStates->second.getX();
         }
+        
+        if (currentStateX == -1) {
+            continue;
+        }
+        
+        bool hasDuplicates = false;
+        
+        cout << currentStateX << endl;
+        cout << "That transfers to:" << endl;
+        
+        string debugString1 = "";
         
         // 2. okay, we found the X, let's see if there are elements that transition into the exact same values
         vector<StateMachine> nextTransitionsFromCurrentState = it->second;
+        
+        for (int i = 0; i < nextTransitionsFromCurrentState.size(); i++) {
+            debugString1 += to_string(nextTransitionsFromCurrentState[i].getX());
+            debugString1 += " ";
+        }
+        
+        cout << debugString1 << endl;
+        cout << "-------------------------------" << endl;
+        
         for (auto it2 = stateTransitions.begin(); it2 != stateTransitions.end(); it2++) {
-            string otherStateKey = it->first;
+            string otherStateKey = it2->first;
             
             // this is the same state we are comparing with, continue
             if (otherStateKey == currentStateKey) {
                 continue;
             }
             
-            vector<StateMachine> nextTransitionsFromOtherState = it->second;
+            vector<StateMachine> &nextTransitionsFromOtherState = it2->second;
             
             // 3. the other state contains different values transition, add it to the list
             if (nextTransitionsFromOtherState.size() != nextTransitionsFromOtherState.size()) {
-                stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
                 continue;
             }
             
@@ -318,12 +342,16 @@ void finalize() {
             }
             
             // 4. the states are different, add the current state to the list
-            if (nextTransitionsFromCurrentStateString != nextTransitionsFromOtherStateString) {
-                stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
+            if (nextTransitionsFromCurrentStateString == nextTransitionsFromOtherStateString) {
+                hasDuplicates = true;
+                break;
             }
         }
+        
+        if (!hasDuplicates) {
+            stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
+        }
     }
-    
     
     string regEx = "^";
     
@@ -331,13 +359,22 @@ void finalize() {
     for (int j = 0; j < s.size(); j++) {
         StateMachine smn = s.at(j);
         
-        regEx += "(";
-        regEx += to_string(smn.getX());
-        
         // all the possible next states
         if (stateTransitionsNoDuplicates.find(smn.toString()) != stateTransitionsNoDuplicates.end()) {
-            // found next states
-            
+            cout << "Adding an item to the regex:" << endl;
+            cout << smn.toString() << endl;
+            cout << "x: " << smn.getX() << endl;
+            cout << "Which transfers to:" << endl;
+            string debugString2 = "";
+            for (int k = 0; k < stateTransitionsNoDuplicates[smn.toString()].size(); k++) {
+                debugString2 += stateTransitionsNoDuplicates[smn.toString()][k].getX();
+                debugString2 += " ";
+            }
+            cout << debugString2 << endl;
+            cout << "--------------------------------" << endl;
+            // move reason: previously was out of scope of this if, but we need to check if it is not a duplicated item
+            regEx += "(";
+            regEx += to_string(smn.getX());
             regEx += "(";
             
             for (int i = 0; i < stateTransitionsNoDuplicates[smn.toString()].size(); i++) {
@@ -348,31 +385,23 @@ void finalize() {
             }
             
             regEx += ")";
-        }
-        
-        regEx += ")";
-        
-        if (j != s.size() - 1) {
-            regEx += "|";
+            regEx += ")";
+            
+            if (j != s.size() - 1) {
+                regEx += "|";
+            }
+        } else {
+            // if the last item should not be added - remove the last pipe in the regex
+            if (j == s.size() - 1) {
+                regEx = regEx.substr(0, regEx.length() - 2);
+            }
         }
     }
     
     regEx += "$";
     
     // write the result into the console
-    
     cout << "The regex: " << regEx << endl;
-    
-    // Log all the state transitions in a text format
-//    for (auto it = stateTransitions.begin(); it != stateTransitions.end(); it++) {
-//        cout << "The state key: " << it->first << endl;
-//        for (StateMachine smn : it->second) {
-//            cout << "Transitioned to: " << smn.toString() << endl;
-//        }
-//    }
-//
-//    cout << endl;
-//    cout << endl;
 }
 
 
