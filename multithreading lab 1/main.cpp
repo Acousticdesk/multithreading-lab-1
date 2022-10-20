@@ -21,7 +21,7 @@ int p4;
 // total number of operations taken (is being used to track how many more operations we need to take before exiting)
 int n = 0;
 
-const int MAX_ITERATIONS = 100;
+const int MAX_ITERATIONS = 1000;
 
 // whether or not we stopped processing the threads
 bool finished = false;
@@ -97,7 +97,6 @@ public:
 map<string, StateMachine> allStatesLookup;
 map<string, vector<StateMachine>> stateTransitions;
 map<string, vector<StateMachine>> stateTransitionsNoDuplicates;
-//map<int, bool> singularStatesAdded;
 map<string, bool> stateTransitionsAcknowledged;
 
 // Privisioning the state machine with the inital state
