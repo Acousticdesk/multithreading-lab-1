@@ -98,6 +98,7 @@ map<string, StateMachine> allStatesLookup;
 map<string, vector<StateMachine>> stateTransitions;
 map<string, vector<StateMachine>> stateTransitionsNoDuplicates;
 //map<int, bool> singularStatesAdded;
+map<string, bool> stateTransitionsAcknowledged;
 
 // Privisioning the state machine with the inital state
 StateMachine sm(0, 0, 0, 0, 0, 0, 0, "");
@@ -291,6 +292,20 @@ void finalize() {
             continue;
         }
         
+        int numXTransitionOccurrences = 0;
+        
+        for (int i = 0; i < s.size(); i++) {
+            if (s[i].getX() == currentStateX) {
+                numXTransitionOccurrences += 1;
+            }
+        }
+        
+        // the only transition from this X
+        if (numXTransitionOccurrences == 1) {
+            stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
+            continue;
+        }
+        
         bool hasDuplicates = false;
         
         cout << currentStateX << endl;
@@ -341,14 +356,28 @@ void finalize() {
                 nextTransitionsFromOtherStateString += to_string(nextTransitionsFromOtherStateCopy[j].getX());
             }
             
+            string stateAcknowledgementKey = to_string(currentStateX) + "_" + nextTransitionsFromCurrentStateString;
+            bool isTransitionAcknowledgedAlready = stateTransitionsAcknowledged[stateAcknowledgementKey];
+            cout << "is Acknowledged already: " << endl;
+            cout << to_string(isTransitionAcknowledgedAlready) << endl;
+            stateTransitionsAcknowledged[stateAcknowledgementKey] = true;
+            
+            if (!isTransitionAcknowledgedAlready) {
+                stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
+                break;
+            }
+            
             // 4. the states are different, add the current state to the list
             if (nextTransitionsFromCurrentStateString == nextTransitionsFromOtherStateString) {
                 hasDuplicates = true;
                 break;
             }
+            
+            cout << "is not marked as duplicate" << endl;
         }
         
         if (!hasDuplicates) {
+            cout << "added" << endl;
             stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
         }
     }
@@ -367,7 +396,7 @@ void finalize() {
             cout << "Which transfers to:" << endl;
             string debugString2 = "";
             for (int k = 0; k < stateTransitionsNoDuplicates[smn.toString()].size(); k++) {
-                debugString2 += stateTransitionsNoDuplicates[smn.toString()][k].getX();
+                debugString2 += to_string(stateTransitionsNoDuplicates[smn.toString()][k].getX());
                 debugString2 += " ";
             }
             cout << debugString2 << endl;
