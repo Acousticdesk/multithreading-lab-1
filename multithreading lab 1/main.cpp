@@ -308,24 +308,23 @@ void finalize() {
         
         bool hasDuplicates = false;
         
-        cout << currentStateX << endl;
-        cout << "That transfers to:" << endl;
-        
-        string debugString1 = "";
-        
         // 2. okay, we found the X, let's see if there are elements that transition into the exact same values
         vector<StateMachine> nextTransitionsFromCurrentState = it->second;
+        map<string, bool> stateTransitionsWithTheSameX;
         
-        for (int i = 0; i < nextTransitionsFromCurrentState.size(); i++) {
-            debugString1 += to_string(nextTransitionsFromCurrentState[i].getX());
-            debugString1 += " ";
+        // filter stateTransitions and pick the ones with the correct X
+        for (int i = 0; i < s.size(); i++) {
+            if (s[i].getX() == currentStateX && s[i].toString() != currentStateKey) {
+                stateTransitionsWithTheSameX.insert(pair<string, bool>(s[i].toString(), true));
+            }
         }
-        
-        cout << debugString1 << endl;
-        cout << "-------------------------------" << endl;
         
         for (auto it2 = stateTransitions.begin(); it2 != stateTransitions.end(); it2++) {
             string otherStateKey = it2->first;
+            
+            if (!stateTransitionsWithTheSameX[otherStateKey]) {
+                continue;
+            }
             
             // this is the same state we are comparing with, continue
             if (otherStateKey == currentStateKey) {
