@@ -242,7 +242,7 @@ void finalize() {
     sm.clearStatesWhereXDidNotChange();
     
     for (int i = 0; i < s.size(); i++) {
-        // we are not interested in the last item
+        // we are not interested in the last item because there is no next state
         if (i == s.size() - 1) {
             continue;
         }
@@ -291,21 +291,7 @@ void finalize() {
         if (currentStateX == -1) {
             continue;
         }
-        
-        int numXTransitionOccurrences = 0;
-        
-        for (int i = 0; i < s.size(); i++) {
-            if (s[i].getX() == currentStateX) {
-                numXTransitionOccurrences += 1;
-            }
-        }
-        
-        // the only transition from this X
-        if (numXTransitionOccurrences == 1) {
-            stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
-            continue;
-        }
-        
+                
         bool hasDuplicates = false;
         
         // 2. okay, we found the X, let's see if there are elements that transition into the exact same values
@@ -323,11 +309,6 @@ void finalize() {
             string otherStateKey = it2->first;
             
             if (!stateTransitionsWithTheSameX[otherStateKey]) {
-                continue;
-            }
-            
-            // this is the same state we are comparing with, continue
-            if (otherStateKey == currentStateKey) {
                 continue;
             }
             
@@ -357,8 +338,6 @@ void finalize() {
             
             string stateAcknowledgementKey = to_string(currentStateX) + "_" + nextTransitionsFromCurrentStateString;
             bool isTransitionAcknowledgedAlready = stateTransitionsAcknowledged[stateAcknowledgementKey];
-            cout << "is Acknowledged already: " << endl;
-            cout << to_string(isTransitionAcknowledgedAlready) << endl;
             stateTransitionsAcknowledged[stateAcknowledgementKey] = true;
             
             if (!isTransitionAcknowledgedAlready) {
@@ -371,12 +350,9 @@ void finalize() {
                 hasDuplicates = true;
                 break;
             }
-            
-            cout << "is not marked as duplicate" << endl;
         }
         
         if (!hasDuplicates) {
-            cout << "added" << endl;
             stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
         }
     }
@@ -389,18 +365,6 @@ void finalize() {
         
         // all the possible next states
         if (stateTransitionsNoDuplicates.find(smn.toString()) != stateTransitionsNoDuplicates.end()) {
-            cout << "Adding an item to the regex:" << endl;
-            cout << smn.toString() << endl;
-            cout << "x: " << smn.getX() << endl;
-            cout << "Which transfers to:" << endl;
-            string debugString2 = "";
-            for (int k = 0; k < stateTransitionsNoDuplicates[smn.toString()].size(); k++) {
-                debugString2 += to_string(stateTransitionsNoDuplicates[smn.toString()][k].getX());
-                debugString2 += " ";
-            }
-            cout << debugString2 << endl;
-            cout << "--------------------------------" << endl;
-            // move reason: previously was out of scope of this if, but we need to check if it is not a duplicated item
             regEx += "(";
             regEx += to_string(smn.getX());
             regEx += "(";
