@@ -98,7 +98,7 @@ public:
     }
 };
 
-map<string, StateMachine> allStatesLookup;
+//map<string, StateMachine> allStatesLookup;
 map<string, vector<StateMachine>> stateTransitions;
 map<string, vector<StateMachine>> stateTransitionsNoDuplicates;
 
@@ -266,14 +266,14 @@ void finalize() {
     
     // create states lookup (we will need it to properly remove the regex groups duplicates)
     for (int i = 0; i < s.size(); i++) {
-        allStatesLookup[s[i].toString()] = s[i];
+        // allStatesLookup.insert(make_pair(s[i].toString(), s[i]));
     }
     
     // remove all the regex group duplicates
     for (auto it = stateTransitions.begin(); it != stateTransitions.end(); it++)
     {
         string currentStateKey = it->first;
-        int currentStateX = allStatesLookup[currentStateKey].getX();
+        int currentStateX = 1;
         
         // find the elements that transition to the exact same values
         // 1. if there are no elements with the same X than it is impossible that they transition to the same values
@@ -295,7 +295,30 @@ void finalize() {
             vector<StateMachine> nextTransitionsFromOtherState = it->second;
             
             // 3. the other state contains different values transition, add it to the list
-            if (!equal(nextTransitionsFromCurrentState.begin(), nextTransitionsFromCurrentState.end(), nextTransitionsFromOtherState.begin())) {
+            if (nextTransitionsFromOtherState.size() != nextTransitionsFromOtherState.size()) {
+                stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
+                continue;
+            }
+            
+            vector<StateMachine> nextTransitionsFromCurrentStateCopy = nextTransitionsFromCurrentState;
+            vector<StateMachine> nextTransitionsFromOtherStateCopy = nextTransitionsFromOtherState;
+            
+            string nextTransitionsFromCurrentStateString = "";
+            string nextTransitionsFromOtherStateString = "";
+            
+            sort(nextTransitionsFromCurrentStateCopy.begin(), nextTransitionsFromCurrentStateCopy.end(), [&](StateMachine sm1, StateMachine sm2) { return sm1.getX() < sm2.getX(); });
+            sort(nextTransitionsFromOtherStateCopy.begin(), nextTransitionsFromOtherStateCopy.end(), [&](StateMachine sm1, StateMachine sm2) { return sm1.getX() < sm2.getX(); });
+            
+            for (int j = 0; j < nextTransitionsFromCurrentStateCopy.size(); j ++) {
+                nextTransitionsFromCurrentStateString += to_string(nextTransitionsFromCurrentStateCopy[j].getX());
+            }
+            
+            for (int j = 0; j < nextTransitionsFromOtherStateCopy.size(); j ++) {
+                nextTransitionsFromOtherStateString += to_string(nextTransitionsFromOtherStateCopy[j].getX());
+            }
+            
+            // 4. the states are different, add the current state to the list
+            if (nextTransitionsFromCurrentStateString != nextTransitionsFromOtherStateString) {
                 stateTransitionsNoDuplicates[currentStateKey] = stateTransitions[currentStateKey];
             }
         }
