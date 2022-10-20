@@ -21,7 +21,7 @@ int p4;
 // total number of operations taken (is being used to track how many more operations we need to take before exiting)
 int n = 0;
 
-const int MAX_ITERATIONS = 1000;
+const int MAX_ITERATIONS = 100;
 
 // whether or not we stopped processing the threads
 bool finished = false;
@@ -236,6 +236,8 @@ void finalize() {
         this_thread::sleep_for(chrono::milliseconds(1000));
     }
     
+    // [{}, {}, {} ..., {}]
+    // { [xyz] -> [xyz1, xyz2, xzy3] }
     // create state transition map
     vector<StateMachine> &s = sm.getState();
     sm.clearStatesWhereXDidNotChange();
@@ -254,7 +256,12 @@ void finalize() {
             stateTransitions[stateKey] = sv;
         }
 
-        stateTransitions[stateKey].push_back(s.at(i + 1));
+        // compact possible next states (remove duplicates)
+        if (find_if(stateTransitions[stateKey].begin(), stateTransitions[stateKey].end(), [&](StateMachine smn) { return smn.getX() == s.at(i + 1).getX(); }) == stateTransitions[stateKey].end())
+        {
+            // Element not in vector.
+            stateTransitions[stateKey].push_back(s.at(i + 1));
+        }
     }
     
     // Log all the state transitions in a text format
