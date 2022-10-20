@@ -98,7 +98,7 @@ public:
     }
 };
 
-//map<string, StateMachine> allStatesLookup;
+map<string, StateMachine> allStatesLookup;
 map<string, vector<StateMachine>> stateTransitions;
 map<string, vector<StateMachine>> stateTransitionsNoDuplicates;
 
@@ -266,7 +266,7 @@ void finalize() {
     
     // create states lookup (we will need it to properly remove the regex groups duplicates)
     for (int i = 0; i < s.size(); i++) {
-        // allStatesLookup.insert(make_pair(s[i].toString(), s[i]));
+        allStatesLookup.insert(make_pair(s[i].toString(), s[i]));
     }
     
     // remove all the regex group duplicates
