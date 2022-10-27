@@ -108,7 +108,7 @@ void thread1() {
     x=0;
     p1 = 11;
     sm.makeNextState(x, y, z, p1, p2, p3, p4, "p11");
-    
+
     y=0;
     p1 = 12;
     sm.makeNextState(x, y, z, p1, p2, p3, p4, "p12");
@@ -126,6 +126,7 @@ void thread1() {
         p1 = 15;
         sm.makeNextState(x, y, z, p1, p2, p3, p4, "p15");
         
+        // 3->7: 3
         x=z;
         p1 = 16;
         sm.makeNextState(x, y, z, p1, p2, p3, p4, "p16");
@@ -154,6 +155,7 @@ void thread2() {
         p2 = 24;
         sm.makeNextState(x, y, z, p1, p2, p3, p4, "p24");
         
+        // 3->5: 1
         y=3;
         p2 = 25;
         sm.makeNextState(x, y, z, p1, p2, p3, p4, "p25");
@@ -186,6 +188,7 @@ void thread3() {
         p3 = 34;
         sm.makeNextState(x, y, z, p1, p2, p3, p4, "p34");
         
+        // 3->5: 2
         z=y;
         p3 = 35;
         sm.makeNextState(x, y, z, p1, p2, p3, p4, "p35");
@@ -223,6 +226,7 @@ void thread4() {
         p4 = 45;
         sm.makeNextState(x, y, z, p1, p2, p3, p4, "p45");
         
+        // 3->7: 4
         x=7;
         p4 = 46;
         sm.makeNextState(x, y, z, p1, p2, p3, p4, "p46");
@@ -241,7 +245,7 @@ void finalize() {
     // create state transition map (keep track of all the next states for a specific X)
     // [{}, {}, ..., {}] => { [operation_id]: [{}, {}] }
     vector<StateMachine> &s = sm.getState();
-    sm.clearStatesWhereXDidNotChange();
+    // sm.clearStatesWhereXDidNotChange();
     
     for (int i = 0; i < s.size(); i++) {
         // we are not interested in the last item because there is no next state
@@ -261,6 +265,12 @@ void finalize() {
         if (find_if(stateTransitions[stateKey].begin(), stateTransitions[stateKey].end(), [&](StateMachine smn) { return smn.getX() == s.at(i + 1).getX(); }) == stateTransitions[stateKey].end())
         {
             // Element not in vector.
+            if (s.at(i).getX() == 3 && s.at(i + 1).getX() == 7) {
+                for (int z = 0; z <= i + 1; z++) {
+                    cout << s.at(z).toString() << endl;
+                }
+                cout << "---------------------------------" << endl;
+            }
             stateTransitions[stateKey].push_back(s.at(i + 1));
         }
     }
