@@ -68,7 +68,7 @@ public:
     }
     
     string toString() {
-        return to_string(this->mX) + "|" + to_string(this->mY) + "|" + to_string(this->mZ) + "|" + to_string(this->mP1) + "|" + to_string(this->mP2) + "|" + to_string(this->mP3) + "|" + to_string(this->mP4);
+        return to_string(this->mX) + "|" + to_string(this->mY) + "|" + to_string(this->mZ) + "|" + to_string(this->mP1) + "|" + to_string(this->mP2) + "|" + to_string(this->mP3) + "|" + to_string(this->mP4) + "|" + this->mInitiator;
     }
     
     int getX() {
@@ -98,6 +98,8 @@ map<string, StateMachine> allStatesLookup;
 map<string, vector<StateMachine>> stateTransitions;
 map<string, vector<StateMachine>> stateTransitionsNoDuplicates;
 map<string, bool> stateTransitionsAcknowledged;
+
+vector<string> unreachableStates = { "p14", "p15", "p16", "p24", "p25", "p26", "p34", "p35", "p36", "p44", "p45", "p46" };
 
 // Privisioning the state machine with the inital state
 StateMachine sm(0, 0, 0, 0, 0, 0, 0, "");
@@ -198,6 +200,7 @@ void thread3() {
     finished = true;
 }
 
+// 3 7 is not reachable
 void thread4() {
     x=0;
     p4 = 41;
@@ -295,19 +298,19 @@ void finalize() {
         
         // 2. okay, we found the X, let's see if there are elements that transition into the exact same values
         vector<StateMachine> nextTransitionsFromCurrentState = it->second;
-        map<string, bool> stateTransitionsWithTheSameX;
+        map<string, bool> stateTransitionsWithTheSameInitialX;
         
         // filter stateTransitions and pick the ones with the correct X
         for (int i = 0; i < s.size(); i++) {
             if (s[i].getX() == currentStateX && s[i].toString() != currentStateKey) {
-                stateTransitionsWithTheSameX.insert(pair<string, bool>(s[i].toString(), true));
+                stateTransitionsWithTheSameInitialX.insert(pair<string, bool>(s[i].toString(), true));
             }
         }
         
         for (auto it2 = stateTransitions.begin(); it2 != stateTransitions.end(); it2++) {
             string otherStateKey = it2->first;
             
-            if (!stateTransitionsWithTheSameX[otherStateKey]) {
+            if (!stateTransitionsWithTheSameInitialX[otherStateKey]) {
                 continue;
             }
             
@@ -358,9 +361,27 @@ void finalize() {
     
     string regEx = "^";
     
+    vector<int> indexesThatShouldGoLast;
+    
     // create a regular expression
     for (int j = 0; j < s.size(); j++) {
         StateMachine smn = s.at(j);
+        
+        bool isUnreachable = false;
+        
+        for (int k = 0; k < unreachableStates.size(); k++) {
+            if (smn.toString().find(unreachableStates[k]) != std::string::npos) {
+                indexesThatShouldGoLast.push_back(j);
+                isUnreachable = true;
+            }
+        }
+        
+        if (isUnreachable) {
+            if (j == s.size() - 1) {
+                regEx = regEx.substr(0, regEx.length() - 1);
+            }
+            continue;
+        }
         
         // all the possible next states
         if (stateTransitionsNoDuplicates.find(smn.toString()) != stateTransitionsNoDuplicates.end()) {
@@ -388,6 +409,59 @@ void finalize() {
             }
         }
     }
+    
+//    for (int j = 0; j < indexesThatShouldGoLast.size(); j++) {
+//        StateMachine smn = s.at(indexesThatShouldGoLast[j]);
+//
+//        // all the possible next states
+//        regEx += "(";
+//        regEx += to_string(smn.getX());
+//
+//        for (int i = 0; i < stateTransitionsNoDuplicates[smn.toString()].size(); i++) {
+//            regEx += "(";
+//            regEx += to_string(stateTransitionsNoDuplicates[smn.toString()].at(i).getX());
+//            regEx += ")";
+//            if (i != stateTransitionsNoDuplicates[smn.toString()].size() - 1) {
+//                regEx += "|";
+//            }
+//        }
+//
+//        regEx += ")";
+//
+//        if (j != s.size() - 1) {
+//            regEx += "|";
+//        }
+//    }
+    
+        for (int j = 0; j < indexesThatShouldGoLast.size(); j++) {
+            StateMachine smn = s.at(indexesThatShouldGoLast[j]);
+            
+            // all the possible next states
+            if (stateTransitionsNoDuplicates.find(smn.toString()) != stateTransitionsNoDuplicates.end()) {
+                regEx += "(";
+                regEx += to_string(smn.getX());
+                regEx += "(";
+                
+                for (int i = 0; i < stateTransitionsNoDuplicates[smn.toString()].size(); i++) {
+                    regEx += to_string(stateTransitionsNoDuplicates[smn.toString()].at(i).getX());
+                    if (i != stateTransitionsNoDuplicates[smn.toString()].size() - 1) {
+                        regEx += "|";
+                    }
+                }
+                
+                regEx += ")";
+                regEx += ")";
+                
+                if (j != s.size() - 1) {
+                    regEx += "|";
+                }
+            } else {
+                // if the last item should not be added - remove the last pipe in the regex
+                if (j == s.size() - 1) {
+                    regEx = regEx.substr(0, regEx.length() - 2);
+                }
+            }
+        }
     
     regEx += "$";
     
